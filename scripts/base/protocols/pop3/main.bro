@@ -103,16 +103,18 @@ event pop3_request(c: connection, is_orig: bool, command: string, arg: string) &
 function process_command(c: connection, command: CommandInfo) {
     if (command?$command && command$status == "OK") {
         ++c$pop3$successful_commands;
-        if (command$command == "USER") {
-            c$pop3$username = command$arg;
-        }
-        if (command$command == "PASS") {
-            if (default_capture_password)
-                c$pop3$password = command$arg;
-            c$pop3$state = TRANSACTION;
-        }
-        if (command$command == "QUIT") {
-            c$pop3$state = UPDATE;
+        switch(command$command) {
+            case "USER":
+                c$pop3$username = command$arg;
+                break;
+            case "PASS":
+                if (default_capture_password)
+                    c$pop3$password = command$arg;
+                c$pop3$state = TRANSACTION;
+                break;
+            case "QUIT":
+                c$pop3$state = UPDATE;
+                break;
         }
     } else if (command?$command && command$status == "ERR") {
         ++c$pop3$failed_commands;

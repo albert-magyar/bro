@@ -51,7 +51,7 @@ export {
 
 # Add the POP3 state tracking fields to the connection record.
 redef record connection += {
-	pop3_session:        SessionInfo  &optional;
+	pop3:        SessionInfo  &optional;
 };
 
 const ports = { 110/tcp };
@@ -77,63 +77,63 @@ function new_pop3_session(c: connection): SessionInfo {
 }
 	
 function select_command(c: connection, is_request: bool): CommandInfo {
-    if (!c?$pop3_session) {
+    if (!c?$pop3) {
         local s: SessionInfo;
-        c$pop3_session = s;
+        c$pop3 = s;
     }
     local current_command: count;
-    current_command = (is_request) ? c$pop3_session$current_request : c$pop3_session$current_response;
-    if (current_command !in c$pop3_session$pending) {
-        c$pop3_session$pending[current_command] = new_pop3_command(c);
+    current_command = (is_request) ? c$pop3$current_request : c$pop3$current_response;
+    if (current_command !in c$pop3$pending) {
+        c$pop3$pending[current_command] = new_pop3_command(c);
     }
-    return c$pop3_session$pending[current_command];
+    return c$pop3$pending[current_command];
 }
 
 event pop3_request(c: connection, is_orig: bool, command: string, arg: string) &priority=5 {
-    if (!c?$pop3_session)
-        c$pop3_session = new_pop3_session(c);
+    if (!c?$pop3)
+        c$pop3 = new_pop3_session(c);
     local current_command: CommandInfo;
     current_command = select_command(c, is_orig);
     current_command$has_client_activity = T;	
     current_command$command = command;
     current_command$arg = arg;
-    ++c$pop3_session$current_request;
+    ++c$pop3$current_request;
 }
 
 function process_command(c: connection, command: CommandInfo) {
     if (command?$command && command$status == "OK") {
-        ++c$pop3_session$successful_commands;
+        ++c$pop3$successful_commands;
         if (command$command == "USER") {
-            c$pop3_session$username = command$arg;
+            c$pop3$username = command$arg;
         }
         if (command$command == "PASS") {
             if (default_capture_password)
-                c$pop3_session$password = command$arg;
-            c$pop3_session$state = TRANSACTION;
+                c$pop3$password = command$arg;
+            c$pop3$state = TRANSACTION;
         }
         if (command$command == "QUIT") {
-            c$pop3_session$state = UPDATE;
+            c$pop3$state = UPDATE;
         }
     } else if (command?$command && command$status == "ERR") {
-        ++c$pop3_session$failed_commands;
+        ++c$pop3$failed_commands;
     }
 }
 	
 event pop3_reply(c: connection, is_orig: bool, cmd: string, msg: string) &priority=5 {
-    if (!c?$pop3_session)
-        c$pop3_session = new_pop3_session(c);	
+    if (!c?$pop3)
+        c$pop3 = new_pop3_session(c);	
     local current_command: CommandInfo;
     current_command = select_command(c, is_orig);	
     current_command$status = cmd;
     current_command$msg = msg;
     process_command(c, current_command);
     if (current_command$has_client_activity)
-        ++c$pop3_session$current_response;
+        ++c$pop3$current_response;
 }
 
 event connection_state_remove(c: connection) &priority=-5 {
-    if (c?$pop3_session) {
-        Log::write(POP3::LOG, c$pop3_session);
+    if (c?$pop3) {
+        Log::write(POP3::LOG, c$pop3);
     }
 }
 	

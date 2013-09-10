@@ -31,7 +31,7 @@ export {
         has_client_activity:     bool      &default=F;
     };
 
-    type SessionInfo: record {
+    type Info: record {
         ts:                  time                   &log;
         uid:                 string                 &log;
         id:                  conn_id                &log;
@@ -46,18 +46,18 @@ export {
     };
 	
     ## Event that can be handled to access the POP3 record sent to the logging framework.
-    global log_pop3: event(rec: SessionInfo);
+    global log_pop3: event(rec: Info);
 }
 
 # Add the POP3 state tracking fields to the connection record.
 redef record connection += {
-	pop3:        SessionInfo  &optional;
+	pop3:        Info  &optional;
 };
 
 const ports = { 110/tcp };
 redef likely_server_ports += { ports };
 event bro_init() &priority=5 {
-    Log::create_stream(POP3::LOG, [$columns=SessionInfo, $ev=log_pop3]);
+    Log::create_stream(POP3::LOG, [$columns=Info, $ev=log_pop3]);
     Analyzer::register_for_ports(Analyzer::ANALYZER_POP3, ports);
 }
 
@@ -68,8 +68,8 @@ function new_pop3_command(c: connection): CommandInfo {
     return tmp;
 }
 
-function new_pop3_session(c: connection): SessionInfo {
-    local tmp: SessionInfo;
+function new_pop3_session(c: connection): Info {
+    local tmp: Info;
     tmp$ts=network_time();
     tmp$uid=c$uid;
     tmp$id=c$id;
@@ -78,7 +78,7 @@ function new_pop3_session(c: connection): SessionInfo {
 	
 function select_command(c: connection, is_request: bool): CommandInfo {
     if (!c?$pop3) {
-        local s: SessionInfo;
+        local s: Info;
         c$pop3 = s;
     }
     local current_command: count;

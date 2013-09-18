@@ -1,0 +1,10 @@
+#separator \x09
+#set_separator	,
+#empty_field	(empty)
+#unset_field	-
+#path	pop3
+#open	2013-09-18-20-11-18
+#fields	ts	uid	id.orig_h	id.orig_p	id.resp_h	id.resp_p	successful_commands	failed_commands	username	password
+#types	time	string	addr	port	addr	port	count	count	string	string
+1378325310.468806	CjXZH5QUDWMks9K2a	10.10.64.68	49927	64.135.83.10	110	6	0	frank.faker	-
+#close	2013-09-18-20-11-18

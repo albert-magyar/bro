@@ -1,0 +1,4 @@
+# @TEST-EXEC: bro -r $TRACES/pop3.trace %INPUT
+# @TEST-EXEC: btest-diff pop3.log
+
+@load base/protocols/pop3
